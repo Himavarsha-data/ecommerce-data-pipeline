@@ -1,0 +1,44 @@
+import pandas as pd
+
+RAW_PATH = "data/raw/sales_data.csv"
+OUT_PATH = "data/processed/cleaned_sales_data.csv"
+
+def main():
+    # Load raw data
+    df = pd.read_csv(RAW_PATH)
+
+    # Standardize column names
+    df.columns = df.columns.str.lower().str.strip().str.replace(" ", "_")
+
+    # Drop rows missing critical fields
+    df = df.dropna(subset=["price", "units_sold", "rating"])
+
+    # Convert selected columns to numeric if present
+    numeric_cols = [
+        "price", "retail_price", "units_sold",
+        "rating", "rating_count",
+        "inventory_total", "merchant_rating",
+        "shipping_option_price"
+    ]
+
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
+
+    # Create derived metric: estimated revenue
+    df["estimated_revenue"] = df["price"] * df["units_sold"]
+
+    # Remove unrealistic values
+    df = df[df["price"] > 0]
+    df = df[df["units_sold"] >= 0]
+
+    # Save cleaned dataset
+    df.to_csv(OUT_PATH, index=False)
+
+    print(f"✅ Data cleaning complete. Output: {OUT_PATH}")
+    print("Rows:", len(df))
+    print("Columns:", len(df.columns))
+
+if __name__ == "__main__":
+    main()
+
